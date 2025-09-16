@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache files
+__pycache__/
+*.pyc
+.pyenv/
+
+# IDE files
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# My credentials
+# This line will prevent your Firebase key from being uploaded.
+# Please replace 'your-key-file-name.json' with the actual name of your key file.
+

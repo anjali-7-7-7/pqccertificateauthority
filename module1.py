@@ -9,8 +9,77 @@ import json
 import base64
 import random
 
+# --- Custom Styling (CSS) for a professional purple theme ---
+st.markdown("""
+<style>
+/* Main background gradient and font color */
+.stApp {
+    background: linear-gradient(180deg, #2d1a3e 0%, #1a1129 100%); /* Dark Purple/Violet */
+    color: #eae6f2; /* Light Lavender text */
+}
+
+/* Header colors */
+h1, h2, h3 {
+    color: #FFFFFF;
+}
+
+/* Card/Container styling */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: #3b2a4e; /* Dark Violet */
+    border-radius: 16px;
+    border: 1px solid #4a3a5e;
+    padding: 1.5rem;
+}
+
+/* Custom styling for the key display box */
+.key-box {
+    background-color: #1a1129; /* Darkest background color */
+    border: 1px solid #3b2a4e;
+    border-radius: 12px;
+    padding: 10px;
+    font-family: 'Consolas', 'Menlo', 'monospace';
+    color: #E5E7EB;
+    overflow-x: scroll;
+    white-space: nowrap;
+}
+
+/* Custom HTML Copy Button */
+.copy-btn {
+    background-color: #8b5cf6; /* Vibrant Violet */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    height: 52px;
+}
+.copy-btn:hover { background-color: #7c3aed; }
+.copy-btn:active { background-color: #6d28d9; }
+
+/* Form Submit Button styling */
+.stForm [data-testid="stFormSubmitButton"] button {
+    background-color: #8b5cf6; /* Vibrant Violet */
+    border-radius: 8px;
+    border: none;
+    width: 100%;
+}
+.stForm [data-testid="stFormSubmitButton"] button:hover {
+    background-color: #7c3aed;
+}
+
+/* Expander/Accordion styling */
+.st-emotion-cache-1h9us21, .st-emotion-cache-1ftn52d {
+    background-color: #4a3a5e;
+    border-radius: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # --- Load liboqs shared library using ctypes ---
-# Note: This requires the liboqs library to be installed and available on the system path.
 try:
     # Load libc for memcmp
     libc = ctypes.CDLL(ctypes.util.find_library("c"))
@@ -135,7 +204,6 @@ def generate_dilithium_keypair():
             
         st.session_state.pqc_public_key = bytes(public_key).hex()
         st.session_state.pqc_secret_key = bytes(secret_key).hex()
-        st.success("New PQC keypair generated for your session.")
         return bytes(public_key).hex(), bytes(secret_key).hex()
     finally:
         liboqs.OQS_SIG_free(sig_ptr)
@@ -183,125 +251,128 @@ st.set_page_config(page_title="PQC Certificate Platform", page_icon="🔒")
 
 st.title("🔒 PQC Certificate Platform")
 st.markdown("A unified platform to generate **quantum-secure digital certificates** for various use cases.")
+st.divider()
 
 # Initialize session state for keys
 if 'pqc_public_key' not in st.session_state:
     st.session_state.pqc_public_key = None
     st.session_state.pqc_secret_key = None
+    
+# --- STEP 1: Key Generation ---
+with st.container(border=True):
+    st.header("Step 1: Generate Your PQC Keys")
+    st.markdown("Click the button below to generate a unique **public** and **secret** keypair. These keys are essential for creating and verifying certificates. Keep your secret key safe!")
 
-st.subheader("PQC Keypair")
-st.markdown("This keypair serves as the master Certificate Authority (CA) key for the platform.")
-col1, col2 = st.columns(2)
-with col1:
-    st.text_area("Public Key (Shared)", st.session_state.pqc_public_key or "Click 'Generate' to create a key.", height=150)
-with col2:
-    st.text_area("Secret Key (Keep Private)", st.session_state.pqc_secret_key or "Click 'Generate' to create a key.", height=150)
+    if st.button("Generate New PQC Keypair"):
+        with st.spinner('Generating keypair...'):
+            generate_dilithium_keypair()
+        st.success("New PQC keypair generated for your session.")
 
-if st.button("Generate New PQC Keypair"):
-    generate_dilithium_keypair()
+    # Use st.expander to hide long keys unless the user wants to see them
+    with st.expander("Show Generated Keys"):
+        st.code(f"Public Key: {st.session_state.pqc_public_key}")
+        st.code(f"Secret Key: {st.session_state.pqc_secret_key}")
 
 st.markdown("---")
 
-st.header("Generate a PQC Certificate")
-use_case = st.selectbox(
-    "Select a Use Case:",
-    ("UPI Payments", "Cloud TLS", "Blockchain/Web3")
-)
+# --- STEP 2: Certificate Creation ---
+with st.container(border=True):
+    st.header("Step 2: Create a PQC Certificate")
+    st.markdown("Select a use case and enter the relevant details. The platform will use your generated keys to create a quantum-secure digital certificate.")
 
-# --- Dynamic form based on the selected use case ---
-if use_case == "UPI Payments":
-    st.markdown("Enter simulated UPI transaction details to generate a certificate.")
-    transaction_id = st.text_input("UPI Transaction ID", "UPIC" + str(random.randint(100000000, 999999999)))
-    amount = st.number_input("Amount (₹)", min_value=1.00, value=500.00, format="%.2f")
-    upi_id = st.text_input("Sender's UPI ID", "sender_name@bank")
+    use_case = st.selectbox(
+        "Select a Use Case:",
+        ("UPI Payments", "Cloud TLS", "Blockchain/Web3")
+    )
 
-    # Data structure for this use case
-    certificate_data = {
-        'use_case': 'upi',
-        'transaction_id': transaction_id,
-        'amount': amount,
-        'upi_id': upi_id,
-        'timestamp': datetime.now().isoformat(),
-        'public_key': st.session_state.pqc_public_key
-    }
-
-elif use_case == "Cloud TLS":
-    st.markdown("Enter domain and server details to generate a quantum-safe TLS certificate.")
-    domain_name = st.text_input("Domain Name", "example.com")
-    server_id = st.text_input("Server ID", "server_12345")
-    csr_data = st.text_area("Certificate Signing Request (CSR)", "---BEGIN CSR---...", height=100)
+    # --- Dynamic form based on the selected use case ---
+    if use_case == "UPI Payments":
+        st.markdown("#### UPI Payments Details")
+        st.markdown("Enter simulated UPI transaction details to generate a certificate.")
+        transaction_id = st.text_input("UPI Transaction ID", "UPIC" + str(random.randint(100000000, 999999999)))
+        amount = st.number_input("Amount (₹)", min_value=1.00, value=500.00, format="%.2f")
+        upi_id = st.text_input("Sender's UPI ID", "sender_name@bank")
     
-    # Data structure for this use case
-    certificate_data = {
-        'use_case': 'cloud_tls',
-        'domain_name': domain_name,
-        'server_id': server_id,
-        'csr_data': csr_data,
-        'timestamp': datetime.now().isoformat(),
-        'public_key': st.session_state.pqc_public_key
-    }
+        certificate_data = {
+            'use_case': 'upi',
+            'transaction_id': transaction_id,
+            'amount': amount,
+            'upi_id': upi_id,
+            'timestamp': datetime.now().isoformat(),
+            'public_key': st.session_state.pqc_public_key
+        }
 
-elif use_case == "Blockchain/Web3":
-    st.markdown("Enter transaction details to generate a PQC signature for a blockchain transaction.")
-    wallet_address = st.text_input("Sender's Wallet Address", "0x" + "a" * 40)
-    transaction_hash = st.text_input("Transaction Hash", "0x" + "b" * 64)
-    dapp_name = st.text_input("dApp Name", "Decentralized Finance App")
+    elif use_case == "Cloud TLS":
+        st.markdown("#### Cloud TLS Details")
+        st.markdown("Enter domain and server details to generate a quantum-safe TLS certificate.")
+        domain_name = st.text_input("Domain Name", "example.com")
+        server_id = st.text_input("Server ID", "server_12345")
+        csr_data = st.text_area("Certificate Signing Request (CSR)", "---BEGIN CSR---...", height=100)
+    
+        certificate_data = {
+            'use_case': 'cloud_tls',
+            'domain_name': domain_name,
+            'server_id': server_id,
+            'csr_data': csr_data,
+            'timestamp': datetime.now().isoformat(),
+            'public_key': st.session_state.pqc_public_key
+        }
 
-    # Data structure for this use case
-    certificate_data = {
-        'use_case': 'blockchain',
-        'wallet_address': wallet_address,
-        'transaction_hash': transaction_hash,
-        'dapp_name': dapp_name,
-        'timestamp': datetime.now().isoformat(),
-        'public_key': st.session_state.pqc_public_key
-    }
+    elif use_case == "Blockchain/Web3":
+        st.markdown("#### Blockchain/Web3 Details")
+        st.markdown("Enter transaction details to generate a PQC signature for a blockchain transaction.")
+        wallet_address = st.text_input("Sender's Wallet Address", "0x" + "a" * 40)
+        transaction_hash = st.text_input("Transaction Hash", "0x" + "b" * 64)
+        dapp_name = st.text_input("dApp Name", "Decentralized Finance App")
+    
+        certificate_data = {
+            'use_case': 'blockchain',
+            'wallet_address': wallet_address,
+            'transaction_hash': transaction_hash,
+            'dapp_name': dapp_name,
+            'timestamp': datetime.now().isoformat(),
+            'public_key': st.session_state.pqc_public_key
+        }
 
-if st.button("Create PQC Certificate"):
-    if not st.session_state.pqc_secret_key:
-        st.error("Please generate a PQC keypair first.")
-    else:
-        try:
-            # Sign the data to create the certificate
-            pqc_signature = sign_certificate_data(certificate_data, st.session_state.pqc_secret_key)
-            
-            if pqc_signature:
-                # Store the full certificate in Firestore
-                full_certificate = {
-                    **certificate_data,
-                    'pqc_signature': pqc_signature
-                }
+    if st.button("Create PQC Certificate"):
+        if not st.session_state.pqc_secret_key:
+            st.error("🚨 Please generate a PQC keypair first.")
+        else:
+            try:
+                pqc_signature = sign_certificate_data(certificate_data, st.session_state.pqc_secret_key)
                 
-                db.collection('pqc_certificates').add(full_certificate)
-                st.success("PQC Certificate created and saved successfully!")
-                
-                # Display the certificate in a more readable format
-                st.subheader("Generated Certificate:")
-                st.json({
-                    "Use Case": full_certificate['use_case'],
-                    "Signature": full_certificate['pqc_signature'],
-                    "Timestamp": full_certificate['timestamp'],
-                    "Details": {k: v for k, v in full_certificate.items() if k not in ['use_case', 'pqc_signature', 'timestamp', 'public_key']}
-                })
-        except Exception as e:
-            st.error(f"An error occurred during certificate generation: {e}")
+                if pqc_signature:
+                    full_certificate = {
+                        **certificate_data,
+                        'pqc_signature': pqc_signature
+                    }
+                    
+                    db.collection('pqc_certificates').add(full_certificate)
+                    st.success("✅ PQC Certificate created and saved successfully!")
+                    
+                    with st.expander("View the Generated Certificate"):
+                        st.json(full_certificate)
+            except Exception as e:
+                st.error(f"An error occurred during certificate generation: {e}")
 
 st.markdown("---")
 
-st.header("Certificate History")
-st.markdown("Below are the most recent certificates securely stored in your Firestore database.")
+# --- STEP 3: View History ---
+with st.container(border=True):
+    st.header("Step 3: View Certificate History")
+    st.markdown("Below are the most recent certificates securely stored in your Firestore database.")
 
-try:
-    certificates_ref = db.collection('pqc_certificates').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(10)
-    docs = certificates_ref.stream()
-    
-    certificate_list = list(docs)
-    if not certificate_list:
-        st.info("No certificates found. Create one above!")
-    else:
-        for doc in certificate_list:
-            certificate = doc.to_dict()
-            with st.expander(f"Certificate ID: {doc.id} - Use Case: {certificate.get('use_case', 'N/A')}"):
-                st.json(certificate)
-except Exception as e:
-    st.error(f"Failed to fetch certificate history: {e}")
+    try:
+        certificates_ref = db.collection('pqc_certificates').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(10)
+        docs = certificates_ref.stream()
+        
+        certificate_list = list(docs)
+        if not certificate_list:
+            st.info("No certificates found. Create one above!")
+        else:
+            for doc in certificate_list:
+                certificate = doc.to_dict()
+                with st.expander(f"Certificate ID: {doc.id} - Use Case: {certificate.get('use_case', 'N/A')}"):
+                    st.json(certificate)
+    except Exception as e:
+        st.error(f"Failed to fetch certificate history: {e}")

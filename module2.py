@@ -1,7 +1,5 @@
-# app.py (complete and integrated file)
-
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
@@ -56,34 +54,7 @@ firebase_service_account_config = {
     "type": "service_account",
     "project_id": "mvpy-88d89",
     "private_key_id": "4de4c080f397b042c366783c0913d59bc39654c0",
-    "private_key": """-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCe3Lnqw85UpTch
-55YyyHHk9zLuYfE/tpgNZCSXrke2tgVKNUqp21wUMiIjg4taKBcPH6rHxWIvbgZ/
-axNjTsZTLjv9G5tt74K4A5T0TMW2Gqnpr7HjHZL3l7jLLNrqPtk9HjsxEYT294Y9
-ObkQt7dMCN5PDstwQ0CNqCHoWkfUaBBeKR9BeD3toDr+zL3NryPQhfwW3x3jYiHA
-UheBTo5X3TbJY9ckXcMKCMZ/6WKNBnf7zTNvlsoEBy22OB37QF1fXgT3lyztxmrU
-74OBDDwST7O99YQ3WT+oNhn61W3MXkNHrWhTcat5SzoEuEBVZOOMPzhT1XYMDE7O
-xlZ2iwdJAgMBAAECggEAANUlSDn0/aGeRcILhk5rcVFmbmCuYUH4jzu3JmGr0b2x
-hMARQJdNXP329xv0Iv+7cdJxfkrj1GexRq3z95RVes0p+3CFnuzJOFos6kai9kCf
-BdrE5faxY78AzZySFzqzmJSA7JGpfq6O7U2kx4chvLSlRSthWp22sc2F9QxaZA+S
-cxbyyn9XV4w5UNr++IvHPVhhCDnO/ZFdyx0tBVa2zHPgeV2WApikuFsMx2N2EdVZ
-2cTp3DPsd56EmW++H+WgCnCbC+fvD2LdHJW1QQoSlirykxVT3lPKudSjp+HbJjiM
-1uZQzmMaBfRrRzz+bk8qEiwiLdfnlxdzjtzh3oJ1IQKBgQDOWtOfT6LfdovXOYPY
-ScVyYdKWOp3hUCfM5Nf6W/Ww44ZZVkL2XOERBk5YFSz3ylopm6+il5T7VmhGAgGk
-vP9Sc4fIWQPS11uWsd8k0Qn5Zs1ypJlj7NTDmf9/g61DfHPjyTBl5279tbSch7QL
-j3B/uxpFT9CMppn/snUEhRCPGQKBgQDFFOHADZkeViafXXRBBztHMN2+IVfvtsBK
-NVL/y6m+W1dHKRjjDSUsEwGqeYVH5fK61+KPp0dS+1+XZud31bXF8iJwz6qGWkwh
-EkVr4DI9N19cAfDwCAlh8zIn7fQZV4y0nJJ4VLdtGEu5XP6a2wn+LM75/6vW1oQ2
-xLsRPTavsQKBgGZ5QjgN0wMHmqAxpqCk2dFYdLw3talrJaihSAPC4PqLsm7w4GX5
-b6cFq6ggM+mFakrZTln+znQVz8hcPLazSFOInbhHRBfS7F+kSvy8diiM/Z9dz/KI
-bIwKEJAhMsydo+tNQKSKTlrdfihxV16aR7KWlpAu95CxNy58T5IEBloZAoGACvno
-wMuBFaFysTmBOgXvFT3xe59byGwDNZ7WqoxrPcDUkZAGZM7cnSHJ2/a8p451AFb5
-tUp5vHNnlYUTqybp4sZjiKjoNGdfChB8cU+hPKuS0gsBojywWRY0WujzyV2I5p45
-wh3lwVuzC/XT8Ef2vIM+W8oThfmYj3xRdtpT62ECgYEAj5zZbOPrOvou9gESOxoD
-bDWNmDG5+tEmZXnYaWZMoRrmGQ3ywUrREYKPg5SjvaaDmksjgBYULcBd1sqxTJG0
-6uPYqgNrjGeWJioWqcwtMweCPcstXXaYYGEGdIEfyZ0wljVB/ayqfVD/IOyXETox
-wjQiX3d5M0O/MwBnDsilMtw=
------END PRIVATE KEY-----""",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCe3Lnqw85UpTch\n55YyyHHk9zLuYfE/tpgNZCSXrke2tgVKNUqp21wUMiIjg4taKBcPH6rHxWIvbgZ/\naxNjTsZTLjv9G5tt74K4A5T0TMW2Gqnpr7HjHZL3l7jLLNrqPtk9HjsxEYT294Y9\nObkQt7dMCN5PDstwQ0CNqCHoWkfUaBBeKR9BeD3toDr+zL3NryPQhfwW3x3jYiHA\nUheBTo5X3TbJY9ckXcMKCMZ/6WKNBnf7zTNvlsoEBy22OB37QF1fXgT3lyztxmrU\n74OBDDwST7O99YQ3WT+oNhn61W3MXkNHrWhTcat5SzoEuEBVZOOMPzhT1XYMDE7O\nxlZ2iwdJAgMBAAECggEAANUlSDn0/aGeRcILhk5rcVFmbmCuYUH4jzu3JmGr0b2x\nhMARQJdNXP329xv0Iv+7cdJxfkrj1GexRq3z95RVes0p+3CFnuzJOFos6kai9kCf\nBdrE5faxY78AzZySFzqzmJSA7JGpfq6O7U2kx4chvLSlRSthWp22sc2F9QxaZA+S\ncxbyyn9XV4w5UNr++IvHPVhhCDnO/ZFdyx0tBVa2zHPgeV2WApikuFsMx2N2EdVZ\n2cTp3DPsd56EmW++H+WgCnCbC+fvD2LdHJW1QQoSlirykxVT3lPKudSjp+HbJjiM\n1uZQzmMaBfRrRzz+bk8qEiwiLdfnlxdzjtzh3oJ1IQKBgQDOWtOfT6LfdovXOYPY\nScVyYdKWOp3hUCfM5Nf6W/Ww44ZZVkL2XOERBk5YFSz3ylopm6+il5T7VmhGAgGk\nvP9Sc4fIWQPS11uWsd8k0Qn5Zs1ypJlj7NTDmf9/g61DfHPjyTBl5279tbSch7QL\nj3B/uxpFT9CMppn/snUEhRCPGQKBgQDFFOHADZkeViafXXRBBztHMN2+IVfvtsBK\nNVL/y6m+W1dHKRjjDSUsEwGqeYVH5fK61+KPp0dS+1+XZud31bXF8iJwz6qGWkwh\nEkVr4DI9N19cAfDwCAlh8zIn7fQZV4y0nJJ4VLdtGEu5XP6a2wn+LM75/6vW1oQ2\nxLsRPTavsQKBgGZ5QjgN0wMHmqAxpqCk2dFYdLw3talrJaihSAPC4PqLsm7w4GX5\nb6cFq6ggM+mFakrZTln+znQVz8hcPLazSFOInbhHRBfS7F+kSvy8diiM/Z9dz/KI\nbIwKEJAhMsydo+tNQKSKTlrdfihxV16aR7KWlpAu95CxNy58T5IEBloZAoGACvno\nwMuBFaFysTmBOgXvFT3xe59byGwDNZ7WqoxrPcDUkZAGZM7cnSHJ2/a8p451AFb5\ntUp5vHNnlYUTqybp4sZjiKjoNGdfChB8cU+hPKuS0gsBojywWRY0WujzyV2I5p45\nwh3lwVuzC/XT8Ef2vIM+W8oThfmYj3xRdtpT62ECgYEAj5zZbOPrOvou9gESOxoD\nbDWNmDG5+tEmZXnYaWZMoRrmGQ3ywUrREYKPg5SjvaaDmksjgBYULcBd1sqxTJG0\n6uPYqgNrjGeWJioWqcwtMweCPcstXXaYYGEGdIEfyZ0wljVB/ayqfVD/IOyXETox\nwjQiX3d5M0O/MwBnDsilMtw=\n-----END PRIVATE KEY-----",
     "client_email": "firebase-adminsdk-fbsvc@mvpy-88d89.iam.gserviceaccount.com",
     "client_id": "118236180553188787159",
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -102,7 +73,7 @@ except Exception as e:
     raise HTTPException(status_code=500, detail="Firebase initialization failed.")
 
 # --- PQC Logic using ctypes-loaded liboqs ---
-def generate_dilithium_keypair():
+def generate_dilithium_keypair() -> tuple[str, str]:
     sig_name = "Dilithium3"
     sig_name_bytes = sig_name.encode('utf-8')
     sig_ptr = liboqs.OQS_SIG_new(sig_name_bytes)
@@ -118,7 +89,7 @@ def generate_dilithium_keypair():
     finally:
         liboqs.OQS_SIG_free(sig_ptr)
 
-def sign_certificate_data(data, secret_key_hex):
+def sign_certificate_data(data: dict, secret_key_hex: str) -> str:
     sig_name = "Dilithium3"
     sig_name_bytes = sig_name.encode('utf-8')
     sig_ptr = liboqs.OQS_SIG_new(sig_name_bytes)
@@ -150,15 +121,33 @@ app = FastAPI(
 
 # --- Pydantic models for API request and response data ---
 class KeypairResponse(BaseModel):
-    public_key: str
-    secret_key: str
+    public_key: str = Field(..., description="The public key for Dilithium3.")
+    secret_key: str = Field(..., description="The secret key for Dilithium3.")
     message: str
 
 class CertificateRequest(BaseModel):
-    use_case: str
-    data: dict
-    public_key: str
-    secret_key: str
+    use_case: str = Field(..., description="The specific use case for the certificate (e.g., 'academic_transcript').")
+    data: dict = Field(..., description="A dictionary containing the details of the certificate data to be signed.")
+    public_key: str = Field(..., description="The public key used for verification.")
+    secret_key: str = Field(..., description="The secret key used for signing.")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "use_case": "academic_transcript",
+                    "data": {
+                        "student_id": "ST12345",
+                        "course": "Quantum Cryptography",
+                        "grade": "A+",
+                        "university": "State University"
+                    },
+                    "public_key": "Paste the public key from the /generate-keypair endpoint here.",
+                    "secret_key": "Paste the secret key from the /generate-keypair endpoint here."
+                }
+            ]
+        }
+    }
 
 class CertificateResponse(BaseModel):
     use_case: str
@@ -167,7 +156,18 @@ class CertificateResponse(BaseModel):
     details: dict
 
 # --- API Endpoints ---
-@app.get("/api/v1/generate-keypair", response_model=KeypairResponse, tags=["PQC"])
+@app.get(
+    "/api/v1/generate-keypair",
+    response_model=KeypairResponse,
+    tags=["PQC Certificates"],
+    summary="Generate a New PQC Keypair",
+    description="""
+    This endpoint generates a new pair of quantum-secure keys (Dilithium3).
+
+    1. Call this endpoint first to get a fresh `public_key` and `secret_key`.
+    2. Use these keys in the request body of the `/api/v1/create-certificate` endpoint.
+    """
+)
 def generate_keypair_endpoint():
     try:
         public_key, secret_key = generate_dilithium_keypair()
@@ -181,7 +181,20 @@ def generate_keypair_endpoint():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@app.post("/api/v1/create-certificate", response_model=CertificateResponse, tags=["PQC"])
+@app.post(
+    "/api/v1/create-certificate",
+    response_model=CertificateResponse,
+    tags=["PQC Certificates"],
+    summary="Create and Sign a PQC Certificate",
+    description="""
+    This endpoint creates a certificate for a given use case, signs it with the provided secret key, and stores it in the database.
+
+    1. **First, use the `/api/v1/generate-keypair` endpoint.** You need the public and secret keys from there.
+    2. **Copy the `public_key` and `secret_key`** from the response.
+    3. **Paste the keys into the example body below.**
+    4. **Fill out the rest of the form** and click 'Execute' to sign and save your certificate.
+    """
+)
 def create_certificate_endpoint(request: CertificateRequest):
     try:
         certificate_data = {
@@ -208,7 +221,12 @@ def create_certificate_endpoint(request: CertificateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-@app.get("/api/v1/history", tags=["History"])
+@app.get(
+    "/api/v1/history",
+    tags=["Utility"],
+    summary="Retrieve the Last 10 Certificates",
+    description="Fetches and returns a list of the 10 most recently created certificates from the database."
+)
 def get_history():
     try:
         certificates_ref = db.collection('pqc_certificates').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(10)
